@@ -118,6 +118,8 @@
     <string name="player_rewind">Rewind</string>
     <string name="player_pause">Pause</string>
     <string name="player_forward">Forward</string>
+    <string name="player_live">Live</string>
+    <string name="player_return_live">Return to live</string>
     <string name="player_subtitles">Subtitles</string>
     <string name="player_audio">Audio</string>
     <string name="player_quality">Quality</string>
@@ -409,6 +411,9 @@
     <string name="channels_hidden">Hidden</string>
     <string name="channels_showing">Showing</string>
     <string name="channels_show">Show</string>
+    <string name="channels_hide">Hide</string>
+    <string name="channels_hide_all">Hide all</string>
+    <string name="channels_show_all">Show all</string>
 
     <!-- ============================ Search ============================ -->
     <string name="search_type_name">Type a name</string>

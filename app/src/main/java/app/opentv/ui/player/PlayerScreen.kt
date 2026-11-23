@@ -65,6 +65,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -175,7 +176,15 @@ fun PlayerScreen(
     // Digits typed on the remote accumulate here, then jump to that channel number after a beat.
     var numberEntry by remember { mutableStateOf("") }
     var paused by remember { mutableStateOf(false) }
+    var liveOffsetMillis by remember { mutableLongStateOf(C.TIME_UNSET) }
     var resizeMode by remember { mutableIntStateOf(settings.playerResizeMode.value) }
+
+    LaunchedEffect(controller) {
+        while (true) {
+            liveOffsetMillis = controller.player.currentLiveOffset
+            delay(500)
+        }
+    }
 
     var controlsVisible by remember { mutableStateOf(true) }
     var panel by remember { mutableStateOf(Panel.NONE) }
@@ -416,6 +425,30 @@ fun PlayerScreen(
             update = { it.resizeMode = resizeMode },
         )
 
+        val liveBehind = controller.player.isCurrentMediaItemLive &&
+            liveOffsetMillis != C.TIME_UNSET &&
+            liveOffsetMillis > 3_000L
+        val watchingLive = controller.player.isCurrentMediaItemLive &&
+            !paused &&
+            !liveBehind
+
+        if (watchingLive && controlsVisible && !inPip) {
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(32.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFE53935))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    stringResource(R.string.player_live),
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
+        }
+
         // The channel number as you type it, top-right, until it resolves.
         if (numberEntry.isNotEmpty() && !inPip) {
             Box(
@@ -523,12 +556,6 @@ fun PlayerScreen(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (controller.isSeekable) {
-                        BarChip(Icons.Filled.FastRewind, stringResource(R.string.player_rewind), false) {
-                            controller.seekBackward(); interaction++
-                        }
-                        Spacer(Modifier.width(10.dp))
-                    }
                     BarChip(
                         icon = if (paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
                         label = if (paused) stringResource(R.string.common_play) else stringResource(R.string.player_pause),
@@ -539,45 +566,30 @@ fun PlayerScreen(
                         controller.player.playWhenReady = !paused
                         interaction++
                     }
-                    if (controller.isSeekable) {
+                    if (paused && liveBehind) {
                         Spacer(Modifier.width(10.dp))
                         BarChip(Icons.Filled.FastForward, stringResource(R.string.player_forward), false) {
                             controller.seekForward(); interaction++
                         }
                     }
+                    if (liveBehind) {
+                        Spacer(Modifier.width(10.dp))
+                        BarChip(Icons.Filled.PlayArrow, stringResource(R.string.player_return_live), false) {
+                            controller.seekToLive()
+                            paused = false
+                            interaction++
+                        }
+                    }
 
-                    Spacer(Modifier.width(20.dp))
-                    BarChip(Icons.Filled.Subtitles, stringResource(R.string.player_subtitles), panel == Panel.SUBTITLES) {
-                        panel = if (panel == Panel.SUBTITLES) Panel.NONE else Panel.SUBTITLES; interaction++
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    BarChip(Icons.Filled.Audiotrack, stringResource(R.string.player_audio), panel == Panel.AUDIO) {
-                        panel = if (panel == Panel.AUDIO) Panel.NONE else Panel.AUDIO; interaction++
-                    }
                     if (variants.size > 1) {
                         Spacer(Modifier.width(10.dp))
                         BarChip(Icons.Filled.HighQuality, stringResource(R.string.player_quality), panel == Panel.QUALITY) {
                             panel = if (panel == Panel.QUALITY) Panel.NONE else Panel.QUALITY; interaction++
                         }
                     }
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(20.dp))
                     BarChip(Icons.Filled.AspectRatio, stringResource(R.string.player_aspect), panel == Panel.ASPECT) {
                         panel = if (panel == Panel.ASPECT) Panel.NONE else Panel.ASPECT; interaction++
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    val recordingThis = activeRecordings.any { it.channelId == currentId }
-                    BarChip(
-                        icon = Icons.Filled.FiberManualRecord,
-                        label = if (recordingThis) stringResource(R.string.common_stop) else stringResource(R.string.player_record),
-                        selected = recordingThis,
-                        iconTint = Color(0xFFE53935),
-                    ) { toggleRecord() }
-                    if (pipSupported) {
-                        Spacer(Modifier.width(10.dp))
-                        BarChip(Icons.Filled.PictureInPictureAlt, stringResource(R.string.player_pop_out), false) {
-                            (context.findActivity() as? app.opentv.MainActivity)?.enterPipNow()
-                            interaction++
-                        }
                     }
                 }
             }

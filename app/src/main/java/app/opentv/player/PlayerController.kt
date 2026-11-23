@@ -352,6 +352,13 @@ class PlayerController(
         if (player.isCurrentMediaItemSeekable) player.seekForward()
     }
 
+    fun seekToLive() {
+        if (player.isCurrentMediaItemLive) {
+            player.seekToDefaultPosition()
+            player.playWhenReady = true
+        }
+    }
+
     val isSeekable: Boolean get() = player.isCurrentMediaItemSeekable
 
     private fun firstSupportedIndex(group: Tracks.Group): Int {

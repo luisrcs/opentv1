@@ -560,6 +560,8 @@ class CatalogRepository(
 
     suspend fun setChannelHidden(id: Long, hidden: Boolean) = channelDao.setHidden(id, hidden)
 
+    suspend fun setAllChannelsHidden(hidden: Boolean) = channelDao.setHiddenForAll(hidden)
+
     /** Sets (or clears, on blank) a channel's manual rename. Trimmed; a blank name clears it. */
     suspend fun setChannelCustomName(id: Long, name: String?) =
         channelDao.setCustomName(id, name?.trim()?.takeIf { it.isNotBlank() })

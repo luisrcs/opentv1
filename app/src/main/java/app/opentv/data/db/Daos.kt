@@ -189,6 +189,9 @@ interface ChannelDao {
     @Query("UPDATE channels SET hidden = :hidden WHERE id = :id")
     suspend fun setHidden(id: Long, hidden: Boolean)
 
+    @Query("UPDATE channels SET hidden = :hidden")
+    suspend fun setHiddenForAll(hidden: Boolean)
+
     @Query("UPDATE channels SET customName = :name WHERE id = :id")
     suspend fun setCustomName(id: Long, name: String?)
 

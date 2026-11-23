@@ -104,6 +104,8 @@
     <string name="player_rewind">Retroceder</string>
     <string name="player_pause">Pausa</string>
     <string name="player_forward">Avançar</string>
+    <string name="player_live">Direto</string>
+    <string name="player_return_live">Regressar ao direto</string>
     <string name="player_subtitles">Legendas</string>
     <string name="player_audio">Áudio</string>
     <string name="player_quality">Qualidade</string>
@@ -362,6 +364,9 @@
     <string name="channels_hidden">Oculto</string>
     <string name="channels_showing">Visível</string>
     <string name="channels_show">Mostrar</string>
+    <string name="channels_hide">Ocultar</string>
+    <string name="channels_hide_all">Ocultar tudo</string>
+    <string name="channels_show_all">Mostrar tudo</string>
     <string name="search_type_name">Escreva um nome</string>
     <string name="search_start_hint">Comece a escrever para pesquisar canais, filmes e séries.</string>
     <string name="search_no_results">Sem resultados para “%1$s”.</string>

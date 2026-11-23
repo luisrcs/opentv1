@@ -6,8 +6,10 @@
 package app.opentv.ui.channels
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +34,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -131,6 +135,14 @@ fun ChannelManagerScreen(
         ) {
             Text(stringResource(R.string.channels_manager_title), style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.weight(1f))
+            OutlinedButton(onClick = { viewModel.setAllChannelsHidden(true) }) {
+                Text(stringResource(R.string.channels_hide_all))
+            }
+            Spacer(Modifier.width(8.dp))
+            OutlinedButton(onClick = { viewModel.setAllChannelsHidden(false) }) {
+                Text(stringResource(R.string.channels_show_all))
+            }
+            Spacer(Modifier.width(8.dp))
             OutlinedButton(onClick = onBack) { Text(stringResource(R.string.common_done)) }
         }
 
@@ -344,6 +356,7 @@ private fun Hint(text: String) {
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun ManagerRow(
     row: ChannelsViewModel.Row,
     hidden: Boolean,
@@ -352,48 +365,85 @@ private fun ManagerRow(
     leftEdgeModifier: Modifier = Modifier,
 ) {
     val alpha = if (hidden) 0.5f else 1f
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        AsyncImage(
-            model = row.primary.logoUrl,
-            contentDescription = null,
-            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp)),
-        )
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                row.primary.shownName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+    var menuExpanded by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { menuExpanded = true },
+                )
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AsyncImage(
+                model = row.primary.logoUrl,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp)),
             )
-            Text(
-                if (hidden) stringResource(R.string.channels_hidden) else stringResource(R.string.channels_showing),
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (hidden) MaterialTheme.colorScheme.onSurfaceVariant
-                else MaterialTheme.colorScheme.primary,
-            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    row.primary.shownName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    if (hidden) stringResource(R.string.channels_hidden) else stringResource(R.string.channels_showing),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (hidden) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            // The star is the row's leftmost focusable, so it carries the LEFT-to-rail handler.
+            IconButton(onClick = onToggleFavourite, modifier = leftEdgeModifier) {
+                Icon(
+                    imageVector = if (row.primary.favourite) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                    contentDescription = if (row.primary.favourite) stringResource(R.string.common_remove_favourite) else stringResource(R.string.common_favourite),
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(stringResource(R.string.channels_show), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                // Checked = visible; off = hidden. Reads the natural way: switch it off to hide.
+                Switch(checked = !hidden, onCheckedChange = { onToggleHidden() })
+            }
         }
 
-        // The star is the row's leftmost focusable, so it carries the LEFT-to-rail handler.
-        IconButton(onClick = onToggleFavourite, modifier = leftEdgeModifier) {
-            Icon(
-                imageVector = if (row.primary.favourite) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                contentDescription = if (row.primary.favourite) stringResource(R.string.common_remove_favourite) else stringResource(R.string.common_favourite),
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false },
+        ) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        if (row.primary.favourite) stringResource(R.string.common_remove_favourite)
+                        else stringResource(R.string.common_favourite),
+                    )
+                },
+                onClick = {
+                    onToggleFavourite()
+                    menuExpanded = false
+                },
             )
-        }
-        Spacer(Modifier.width(8.dp))
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.channels_show), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-            // Checked = visible; off = hidden. Reads the natural way: switch it off to hide.
-            Switch(checked = !hidden, onCheckedChange = { onToggleHidden() })
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        if (hidden) stringResource(R.string.channels_show)
+                        else stringResource(R.string.channels_hide),
+                    )
+                },
+                onClick = {
+                    onToggleHidden()
+                    menuExpanded = false
+                },
+            )
         }
     }
 }

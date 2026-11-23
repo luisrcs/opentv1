@@ -624,6 +624,12 @@ class ChannelsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun setAllChannelsHidden(hidden: Boolean) {
+        viewModelScope.launch {
+            graph.catalogRepository.setAllChannelsHidden(hidden)
+        }
+    }
+
     fun toggleFavourite(row: Row) {
         viewModelScope.launch {
             // Favouriting the row favourites the logical channel: every variant follows,
